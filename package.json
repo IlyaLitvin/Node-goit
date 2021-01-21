@@ -1,0 +1,29 @@
+{
+  "name": "node-goit",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node  index.js",
+    "dev": "nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/IlyaLitvin/Node-goit.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/IlyaLitvin/Node-goit/issues"
+  },
+  "homepage": "https://github.com/IlyaLitvin/Node-goit#readme",
+  "devDependencies": {
+    "nodemon": "^2.0.7"
+  },
+  "dependencies": {
+    "uuid": "^8.3.2",
+    "yargs": "^16.2.0"
+  }
+}
