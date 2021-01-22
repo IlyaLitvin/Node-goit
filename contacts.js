@@ -1,49 +1,51 @@
-const { v4: uuidv4 } = require("uuid");
 const fs = require("fs").promises;
 const path = require("path");
 const contactsPath = path.join("./db/contacts.json");
 
 async function listContacts() {
   try {
-    const list = await fs.readFile(contactsPath, "utf-8");
-    return JSON.parse(list);
+    const contactsList = await fs.readFile(contactsPath, "utf-8");
+    return JSON.parse(contactsList);
   } catch (err) {
     console.log(err);
   }
 }
 
 async function getContactById(contactId) {
-  const contactsData = await listContacts();
-  const findContact = contactsData.find((contact) => contact.id === contactId);
-  return findContact;
+  const contactsListFun = await listContacts();
+  const getContact = contactsListFun.find(
+    (contact) => contact.id === contactId
+  );
+  return getContact;
 }
 
 async function removeContact(contactId) {
-  const contactsData = await listContacts();
-  const filteredContacts = contactsData.filter(
+  const contactsListFun = await listContacts();
+  const filteredListContacts = contactsListFun.filter(
     (contact) => contact.id !== contactId
   );
-  fs.writeFile(contactsPath, JSON.stringify(filteredContacts));
-  return filteredContacts;
+  fs.writeFile(contactsPath, JSON.stringify(filteredListContacts));
+  return filteredListContacts;
+}
+
+function getRandomIntInclusive(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1)) + min; //Максимум и минимум включаются
 }
 
 async function addContact(name, email, phone) {
   const newContact = {
-    id: uuidv4(),
+    id: getRandomIntInclusive(1, 100),
     name: name,
     email: email,
     phone: phone,
   };
-  const contactsData = await listContacts();
-  const filter = contactsData.filter((contact) => contact.id === newContact.id);
-  if (filter.length === 0) {
-    contactsData.push(newContact);
-    fs.writeFile(contactsPath, JSON.stringify(contactsData));
-    return contactsData;
-  } else {
-    console.log("Такой ишак уже существует");
-    return;
-  }
+  const contactsListFun = await listContacts();
+  contactsListFun.filter((contact) => contact.id === newContact.id);
+  contactsListFun.push(newContact);
+  fs.writeFile(contactsPath, JSON.stringify(contactsListFun));
+  return contactsListFun;
 }
 
 module.exports = { listContacts, getContactById, removeContact, addContact };
