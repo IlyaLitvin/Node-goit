@@ -1,94 +1,67 @@
-const contacts = require("../db/contacts.json");
-const Joi = require("joi");
-const { v4: uuidv4 } = require("uuid");
-const fs = require("fs").promises;
-const path = require("path");
-const contactsPath = path.join("../db/contacts.json");
+const {
+  Types: { ObjectId },
+} = require("mongoose");
+const Contact = require("../contacts.js");
 
-function getAllContacts(req, res) {
+async function getAllContacts(req, res) {
+  const contacts = await Contact.find();
   res.json(contacts);
 }
 
-function contactNotFound(res, contactId) {
-  const contact = contacts.find((contact) => contact.id === contactId);
-  if (!contact) {
-    return res.status(404).send({ message: "Not found" });
-  }
-}
-
-function getContactById(req, res) {
+async function getContactById(req, res) {
   const {
     params: { contactId },
   } = req;
-  contactNotFound(res, contactId);
-  const contactIndex = contacts.findIndex(
-    (contact) => contact.id === contactId
-  );
-  res.json(contacts[contactIndex]);
+  const contact = await Contact.findById(contactId);
+  if (!contact) {
+    return res.status(400).send("Contact isn't found");
+  }
+  res.json(contact);
+}
+
+async function addNewContact(req, res) {
+  try {
+    const { body } = req;
+    const contact = await Contact.create(body);
+    res.json(contact);
+    res.status(201).send(contact);
+  } catch (error) {
+    res.status(400).send(error);
+  }
+}
+
+async function updateContact(req, res) {
+  const {
+    params: { contactId },
+  } = req;
+  const updatedContact = await Contact.findByIdAndUpdate(contactId, req.body, {
+    new: true,
+  });
+  if (!updatedContact) {
+    return res.status(400).send("Contact isn't found");
+  }
+  res.json(updatedContact);
+}
+
+async function deleteContact(req, res) {
+  const {
+    params: { contactId },
+  } = req;
+  const deleteContact = await Contact.findByIdAndDelete(contactId);
+  if (!deleteContact) {
+    return res.status(400).send("Contact isn't found");
+  }
+  res.json(deleteContact);
 }
 
 function validationContacts(req, res, next) {
-  const validationRules = Joi.object({
-    name: Joi.string().required(),
-    email: Joi.string().required(),
-    phone: Joi.string().required(),
-  });
-  const validationResult = validationRules.validate(req.body);
-  if (validationResult.error) {
-    return res.status(400).send({ message: "missing required name field" });
-  }
-  next();
-}
-
-function addNewContact(req, res) {
-  const newContact = {
-    id: uuidv4(),
-    ...req.body,
-  };
-  contacts.push(newContact);
-  fs.writeFile(contactsPath, JSON.stringify(contacts));
-  res.status(201).send(newContact);
-}
-
-function deleteContact(req, res) {
   const {
     params: { contactId },
   } = req;
-  contactNotFound(res, contactId);
-  const index = contacts.findIndex((contact) => contact.id === contactId);
-  contacts.splice(index, 1);
-  fs.writeFile(contactsPath, JSON.stringify(contacts));
-  res.status(200).send({ message: "contact deleted" });
-}
-
-function updateValidationRules(req, res, next) {
-  const validationRules = Joi.object({
-    name: Joi.string(),
-    email: Joi.string(),
-    phone: Joi.string(),
-  });
-  const validationResult = validationRules.validate(req.body);
-  if (validationResult.error) {
-    return res.status(400).send({ message: "missing required name field" });
+  if (!ObjectId.isValid(contactId)) {
+    return res.status(400).send({ message: "Your id isn't valid" });
   }
   next();
-}
-
-function updateContact(req, res) {
-  const {
-    params: { contactId },
-  } = req;
-  contactNotFound(res, contactId);
-  const contactIndex = contacts.findIndex(
-    (contact) => contact.id === contactId
-  );
-  const updatedContact = {
-    ...contacts[contactIndex],
-    ...req.body,
-  };
-  contacts[contactIndex] = updatedContact;
-  fs.writeFile(contactsPath, JSON.stringify(contacts));
-  res.json(updatedContact);
 }
 
 module.exports = {
@@ -97,6 +70,5 @@ module.exports = {
   validationContacts,
   addNewContact,
   deleteContact,
-  updateValidationRules,
   updateContact,
 };
