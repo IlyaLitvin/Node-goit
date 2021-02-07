@@ -11,7 +11,11 @@ router.get(
   contactController.validationContacts,
   contactController.getContactById
 );
-router.post("/", contactController.addNewContact);
+router.post(
+  "/",
+  contactController.updateValidationRules,
+  contactController.addNewContact
+);
 router.delete(
   "/:contactId",
   contactController.validationContacts,
@@ -19,6 +23,7 @@ router.delete(
 );
 router.patch(
   "/:contactId",
+  contactController.updateValidationRules,
   contactController.validationContacts,
   contactController.updateContact
 );

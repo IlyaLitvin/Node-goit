@@ -41,7 +41,7 @@ async function connectToDb() {
     console.log("Database connection successful");
   } catch (error) {
     console.error(error.message);
-    process.exit(0);
+    process.exit(1);
   }
 }
 

@@ -1,7 +1,8 @@
 const {
   Types: { ObjectId },
 } = require("mongoose");
-const Contact = require("../contacts.js");
+const Contact = require("../model/contacts.model.js");
+const Joi = require("joi");
 
 async function getAllContacts(req, res) {
   const contacts = await Contact.find();
@@ -54,6 +55,20 @@ async function deleteContact(req, res) {
   res.json(deleteContact);
 }
 
+function updateValidationRules(req, res, next) {
+  const validationRules = Joi.object({
+    name: Joi.string(),
+    email: Joi.string(),
+    password: Joi.string(),
+    phone: Joi.string(),
+  }).min(1);
+  const validationResult = validationRules.validate(req.body);
+  if (validationResult.error) {
+    return res.status(400).send({ message: "missing required name field" });
+  }
+  next();
+}
+
 function validationContacts(req, res, next) {
   const {
     params: { contactId },
@@ -71,4 +86,5 @@ module.exports = {
   addNewContact,
   deleteContact,
   updateContact,
+  updateValidationRules,
 };
