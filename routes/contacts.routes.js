@@ -6,16 +6,25 @@ const contactController = require("../controllers/contacts.controller.js");
 router.use(morgan("dev"));
 
 router.get("/", contactController.getAllContacts);
-router.get("/:contactId", contactController.getContactById);
+router.get(
+  "/:contactId",
+  contactController.validationContacts,
+  contactController.getContactById
+);
 router.post(
   "/",
-  contactController.validationContacts,
+  contactController.updateValidationRules,
   contactController.addNewContact
 );
-router.delete("/:contactId", contactController.deleteContact);
+router.delete(
+  "/:contactId",
+  contactController.validationContacts,
+  contactController.deleteContact
+);
 router.patch(
   "/:contactId",
   contactController.updateValidationRules,
+  contactController.validationContacts,
   contactController.updateContact
 );
 
