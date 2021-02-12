@@ -1,11 +1,10 @@
 const User = require("../model/user.model.js");
 const jwt = require("jsonwebtoken");
-
 const dotenv = require("dotenv");
 
 dotenv.config();
 
-async function Authorization(req, res, next) {
+async function Auth(req, res, next) {
   const authorizationHeader = req.get("Authorization");
   if (!authorizationHeader) {
     return res.status(401).send({ message: "Not authorized" });
@@ -25,4 +24,4 @@ async function Authorization(req, res, next) {
   }
 }
 
-module.exports = { Authorization };
+module.exports = { Auth };

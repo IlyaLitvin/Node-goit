@@ -15,7 +15,10 @@ const UserSchema = new Schema({
     enum: ["free", "pro", "premium"],
     default: "free",
   },
-  token: String,
+  token: {
+    type: String,
+    unique: true,
+  },
 });
 
 const User = mongoose.model("User", UserSchema);

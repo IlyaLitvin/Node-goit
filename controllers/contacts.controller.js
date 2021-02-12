@@ -79,6 +79,25 @@ function validationContacts(req, res, next) {
   next();
 }
 
+async function contactsPageAndLimit(req, res) {
+  const {
+    params: { page, limit },
+  } = req;
+  const contacts = await Contact.paginate({}, { limit: limit, page: page });
+  res.json(contacts);
+}
+
+async function contactsSub(req, res) {
+  const {
+    params: { sub },
+  } = req;
+  const contacts = await Contact.paginate(
+    { subscription: sub },
+    { limit: 5, page: 1 }
+  );
+  res.json(contacts);
+}
+
 module.exports = {
   getAllContacts,
   getContactById,
@@ -87,4 +106,6 @@ module.exports = {
   deleteContact,
   updateContact,
   updateValidationRules,
+  contactsPageAndLimit,
+  contactsSub,
 };
