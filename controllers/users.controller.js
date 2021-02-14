@@ -85,15 +85,9 @@ function usersValidation(req, res, next) {
 }
 
 async function currentUser(req, res) {
-  const authorizationHeader = req.get("Authorization");
-  const token = authorizationHeader.replace("Bearer ", "");
-  const user = await User.findOne({ token: token });
-  if (!user) {
-    return res.status(401).send({ message: "Not authorized" });
-  }
   return res
     .status(200)
-    .json({ email: user.email, subscription: user.subscription });
+    .json({ email: req.user.email, subscription: req.user.subscription });
 }
 
 async function subscription(req, res) {
@@ -101,15 +95,25 @@ async function subscription(req, res) {
     params: { userid },
   } = req;
   const { subscription } = req.body;
-  if (subscription === "free" || "pro" || "premium") {
-    const userSub = await User.findByIdAndUpdate(
-      userid,
-      { subscription: subscription },
-      { new: true }
-    );
+  const userSub = await User.findByIdAndUpdate(
+    userid,
+    { subscription: subscription },
+    { new: true }
+  );
+  if (
+    subscription === "free" ||
+    subscription === "pro" ||
+    subscription === "premium"
+  ) {
     return res
       .status(201)
       .json({ email: userSub.email, subscription: userSub.subscription });
+  } else if (
+    subscription !== "free" ||
+    subscription !== "pro" ||
+    subscription !== "premium"
+  ) {
+    return res.status(201).json({ email: userSub.email, subscription: "free" });
   }
 }
 
