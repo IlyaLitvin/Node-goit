@@ -10,6 +10,7 @@ const UserSchema = new Schema({
     validate: (value) => value.includes("@"),
   },
   password: { type: String, required: true },
+  avatarURL: String,
   subscription: {
     type: String,
     enum: ["free", "pro", "premium"],
