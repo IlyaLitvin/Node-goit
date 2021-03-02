@@ -1,3 +1,4 @@
+const fs = require("fs");
 const {
   Types: { ObjectId },
 } = require("mongoose");
@@ -6,6 +7,11 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Joi = require("joi");
 const dotenv = require("dotenv");
+const multer = require("multer");
+const path = require("path");
+const Avatar = require("avatar-builder");
+const avatar = Avatar.catBuilder(128);
+const { existsSync } = require("fs");
 
 dotenv.config();
 
@@ -14,12 +20,18 @@ mongoose.set("useFindAndModify", false);
 const User = require("../model/user.model.js");
 
 async function userRegister(req, res) {
+  const { body } = req;
   try {
-    const { body } = req;
+    avatar
+      .create()
+      .then((buffer) => fs.writeFileSync("tmp/avatar.png", buffer));
+    const newAvatarName = Date.now();
+    fs.rename("tmp/avatar.png", `public/images/${newAvatarName}.png`, () => {});
     const hashPass = await bcrypt.hash(body.password, 2);
     const user = await User.create({
       ...body,
       password: hashPass,
+      avatarURL: `http://localhost:3000/images/${newAvatarName}.png`,
     });
     res.status(201).json({
       user: {
@@ -28,7 +40,7 @@ async function userRegister(req, res) {
       },
     });
   } catch (error) {
-    res.status(400).send(error);
+    res.status(400).send(error.message);
   }
 }
 
@@ -117,6 +129,77 @@ async function subscription(req, res) {
   }
 }
 
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "public/images");
+  },
+  filename: function (req, file, cb) {
+    const fileInfo = path.parse(file.originalname);
+    cb(null, `${Date.now()}${fileInfo.ext}`);
+  },
+});
+const upload = multer({ storage: storage });
+
+async function updateAvatar(req, res) {
+  const { body, file, user } = req;
+  switch (true) {
+    case !!file && !!body.password:
+      deleteAvatar(user.avatarURL);
+      const hashedPass = await bcrypt.hash(body.password, 2);
+      const newAvatar = await User.findByIdAndUpdate(user._id, {
+        ...body,
+        passoword: hashedPass,
+        avatarURL: `http://localhost:3000/images/${file.filename}`,
+      });
+      return res.status(200).send({ message: "File and pass updated" });
+    case !!body.password:
+      const hashPass = await bcrypt.hash(body.password, 2);
+      const newPass = await User.findByIdAndUpdate(user._id, {
+        ...body,
+        passoword: hashPass,
+      });
+      return res.status(200).send({ message: "Pass updated" });
+
+    case !!file:
+      deleteAvatar(user.avatarURL);
+      const newFile = await User.findByIdAndUpdate(user._id, {
+        ...body,
+        avatarURL: `http://localhost:3000/images/${file.filename}`,
+      });
+      return res.status(200).send({ message: "File updated" });
+
+    default:
+      const newEmail = await User.findByIdAndUpdate(user._id, {
+        ...body,
+      });
+      return res.status(200).send({ message: "Email updated" });
+  }
+}
+
+function updateValidationAv(req, res, next) {
+  const validationRules = Joi.object({
+    subscription: Joi.string().valid("free", "pro", "premium"),
+    email: Joi.string().email({
+      minDomainSegments: 2,
+      tlds: { allow: ["com", "net"] },
+    }),
+    password: Joi.string().pattern(/^[0-9]+$/),
+  });
+  const validationResult = validationRules.validate(req.body);
+  console.log();
+  if (validationResult.error) {
+    return res.status(400).send({ message: "missing required name field" });
+  }
+  next();
+}
+
+function deleteAvatar(avatarURL) {
+  const url = avatarURL.replace("http://localhost:3000/images/", "");
+  if (existsSync(`public/images/${url}`)) {
+    fs.unlink(path.join("public/images", url), () => {});
+  }
+}
+
 module.exports = {
   userRegister,
   userLogin,
@@ -124,4 +207,8 @@ module.exports = {
   usersValidation,
   currentUser,
   subscription,
+  upload,
+  updateAvatar,
+  updateValidationAv,
+  deleteAvatar,
 };

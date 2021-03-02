@@ -19,5 +19,12 @@ router.patch(
   authController.Auth,
   usersController.subscription
 );
+router.patch(
+  "/users/avatars",
+  authController.Auth,
+  usersController.upload.single("avatar"),
+  usersController.updateValidationAv,
+  usersController.updateAvatar
+);
 
 module.exports = router;
