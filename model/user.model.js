@@ -6,7 +6,6 @@ const UserSchema = new Schema({
   email: {
     type: String,
     required: true,
-    unique: true,
     validate: (value) => value.includes("@"),
   },
   password: { type: String, required: true },
@@ -18,7 +17,9 @@ const UserSchema = new Schema({
   },
   token: {
     type: String,
-    unique: true,
+  },
+  verificationToken: {
+    type: String,
   },
 });
 
