@@ -12,16 +12,22 @@ const path = require("path");
 const Avatar = require("avatar-builder");
 const avatar = Avatar.catBuilder(128);
 const { existsSync } = require("fs");
+const { v4: uuidv4 } = require("uuid");
+const sgMail = require("@sendgrid/mail");
 
 dotenv.config();
 
 mongoose.set("useFindAndModify", false);
 
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
 const User = require("../model/user.model.js");
 
 async function userRegister(req, res) {
-  const { body } = req;
   try {
+    const { body } = req;
+    const userToken = uuidv4();
+    sendEmail(userToken, body.email);
     avatar
       .create()
       .then((buffer) => fs.writeFileSync("tmp/avatar.png", buffer));
@@ -30,6 +36,7 @@ async function userRegister(req, res) {
     const hashPass = await bcrypt.hash(body.password, 2);
     const user = await User.create({
       ...body,
+      verificationToken: userToken,
       password: hashPass,
       avatarURL: `http://localhost:3000/images/${newAvatarName}.png`,
     });
@@ -51,6 +58,9 @@ async function userLogin(req, res) {
   });
   if (!user) {
     return res.status(401).send("Email or password is wrong");
+  }
+  if (!user.verificationToken) {
+    return res.status(401).send("You must complete authorization");
   }
   const validPass = await bcrypt.compare(password, user.password);
   if (!validPass) {
@@ -200,6 +210,36 @@ function deleteAvatar(avatarURL) {
   }
 }
 
+async function verifyUser(req, res) {
+  const {
+    params: { verificationToken },
+  } = req;
+  const user = await User.findOne({
+    verificationToken,
+  });
+  if (!user) {
+    return res.status(404).send({ message: "User not found" });
+  }
+  const userUpdate = await User.findByIdAndUpdate(user._id, {
+    verificationToken: "",
+  });
+  return res.status(200).send({ message: "Welcome to our application" });
+}
+
+async function sendEmail(token, email) {
+  try {
+    const msg = {
+      to: email,
+      from: "litvinpiton88@gmail.com",
+      subject: "Please verify your acc",
+      html: `Welcome to our application. To verification your acc please go by <a href="http://localhost:3000/auth/verify/${token}">link</a>`,
+    };
+    await sgMail.send(msg);
+  } catch (error) {
+    res.status(400).send(error.message);
+  }
+}
+
 module.exports = {
   userRegister,
   userLogin,
@@ -211,4 +251,5 @@ module.exports = {
   updateAvatar,
   updateValidationAv,
   deleteAvatar,
+  verifyUser,
 };
